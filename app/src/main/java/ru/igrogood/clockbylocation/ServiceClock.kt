@@ -61,11 +61,6 @@ class ServiceClock : Service() {
                                     showNotification(clock.id)
                                     isAlarmClockActive = true
                                 }
-                            } else {
-                                if (!checkTheEntryLocation(currentDeviceLocation!!, clock)) {
-                                    showNotification(clock.id)
-                                    isAlarmClockActive = true
-                                }
                             }
                         }
                     }
