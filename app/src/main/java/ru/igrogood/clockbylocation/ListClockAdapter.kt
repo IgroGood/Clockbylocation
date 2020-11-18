@@ -1,22 +1,26 @@
 package ru.igrogood.clockbylocation
 
 import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 
 
-class ListClockAdapter(context: Context?, cloks: ArrayList<Clock>?) : BaseAdapter() {
+class ListClockAdapter(context: Context?, cloks: ArrayList<AlarmClock>?) : BaseAdapter() {
+    interface INotesAdapterCallback {
+        fun update()
+    }
+
+    var callback: INotesAdapterCallback? = null
     var ctx: Context? = context
     var lInflater: LayoutInflater? = null
-    var objects: ArrayList<Clock>? = cloks
+    var objects: ArrayList<AlarmClock>? = cloks
     var adapter: ListClockAdapter = this
 
     init {
         lInflater = ctx
-                ?.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater?
+            ?.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater?
     }
 
     override fun getCount(): Int {
@@ -35,42 +39,39 @@ class ListClockAdapter(context: Context?, cloks: ArrayList<Clock>?) : BaseAdapte
         // используем созданные, но не используемые view
         var view: View? = convertView
         if (view == null) {
-            view = lInflater?.inflate(R.layout.item_clock, parent, false)
+            view = lInflater?.inflate(R.layout.item_alarm_clock, parent, false)
         }
-        val p: Clock = getClock(position)
+        val p: AlarmClock = getClock(position)
 
         if (view != null) {
-            (view.findViewById(R.id.name) as TextView).setText(p.name)
-            (view.findViewById(R.id.descr) as TextView).setText(p.descr)
-            //(view.findViewById(R.id.isActive) as CheckBox).isChecked = (p.isActive)
+            (view.findViewById(R.id.name) as TextView).text = if(p.name.isNotEmpty()) p.name else "Будильник"
+            (view.findViewById(R.id.descr) as TextView).text = if(p.descr.isNotEmpty()) p.descr else "Описание"
+            (view.findViewById(R.id.latitude) as TextView).text = p.latitude.toString()
+            (view.findViewById(R.id.longitude) as TextView).text = p.longitude.toString()
             val deleteBtn = view.findViewById(R.id.deleteBtn) as Button
             val cbBuy = view.findViewById<CheckBox>(R.id.isActive)
             cbBuy.isChecked = p.isActive
-            cbBuy.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener { compoundButton, b ->
-                Log.i("ssssssssssss", b.toString())
-                getClock(compoundButton.getTag() as Int).isActive = b
-            })
+            cbBuy.setOnCheckedChangeListener{ compoundButton, b ->
+                getClock(compoundButton.tag as Int).isActive = b
+                callback?.update()
+            }
             cbBuy.tag = position
             cbBuy.isChecked = p.isActive
 
             deleteBtn.setOnClickListener {
                 objects?.removeAt(position)
                 adapter.notifyDataSetChanged()
+                callback?.update()
             }
         }
         return view
     }
 
-
-    fun getClock(position: Int): Clock {
-        return getItem(position) as Clock
+    fun getClock(position: Int): AlarmClock {
+        return getItem(position) as AlarmClock
     }
 
-    fun getClocks(): ArrayList<Clock>? {
+    fun getClocks(): ArrayList<AlarmClock>? {
         return objects
-    }
-
-    fun setDataUpdateListener(l: View.OnClickListener?) {
-        throw RuntimeException("Stub!")
     }
 }

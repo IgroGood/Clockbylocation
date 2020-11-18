@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_radius">10</string>
+    <string name="default_min_radius">0</string>
+    <string name="default_max_radius">10000</string>
+    <integer name="default_step_radius">50</integer>
+</resources>

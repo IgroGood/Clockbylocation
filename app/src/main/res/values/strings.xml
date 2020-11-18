@@ -1,5 +1,24 @@
 <resources>
-    <string name="app_name">Clock by location</string>
+    <string name="app_name">Будильник по геолокации</string>
     <string name="start">Start service</string>
     <string name="stop">Stop service</string>
+    <string name="title_activity_app">Будильник по геолокации</string>
+    <string name="title_map">Карта</string>
+    <string name="title_alarm_list">Будильники</string>
+    <string name="title_location_permission">Геолокация</string>
+    <string name="text_location_permission">Для работы приложения требуется возможность определять геолокацию устройства.</string>
+    <string name="ok">Хорошо</string>
+    <string name="alarm_name">Имя будильника</string>
+    <string name="alarm_description">Описание</string>
+    <string name="alarm_distance">Радиус в метрах</string>
+    <string name="create_an_alarm">Создать будильник</string>
+    <string name="scope_text">Область действия</string>
+    <string name="name_alarm_clock">Имя будильника</string>
+    <string name="descr_alarm_clock">Описание</string>
+    <string name="activate_the_alarm">Активировать будильник</string>
+    <string name="delete_alarm_clock">Удалить</string>
+    <!-- Notification -->
+    <string name="warning">Внимание</string>
+    <string name="notification_when_the_alarm_is_activated">Вы вошли в зону будильника</string>
+    <string name="off_btn">Выключить</string>
 </resources>

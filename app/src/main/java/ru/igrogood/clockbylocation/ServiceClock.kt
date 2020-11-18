@@ -1,7 +1,7 @@
 package ru.igrogood.clockbylocation
 
-import android.R
 import android.app.*
+import android.app.Notification.FLAG_INSISTENT
 import android.content.Intent
 import android.database.Cursor
 import android.graphics.Color
@@ -12,45 +12,30 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.huawei.hms.location.*
+import ru.igrogood.clockbylocation.WakeUpCallActivity.Companion.ID_ALARM_CLOCK
 import java.util.concurrent.TimeUnit
 
 
 class ServiceClock : Service() {
     private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private var currentDeviceLocation: Location? = null
-    var cloks: ArrayList<Clock> = ArrayList()
+    private var notificationManager: NotificationManager? = null
+    var cloks: ArrayList<AlarmClock> = ArrayList()
     val LOG_TAG = "myLogs"
-    override fun onCreate() {
-        super.onCreate()
-        Log.d(LOG_TAG, "onCreate")
+
+    companion object {
+        const val NOTIFICATION_ID = 234
+        const val CHANNEL_ID = "alarm_clock_01"
+        val NAME: CharSequence = "alarm_clock"
+        const val DESCRIPTION = "clock by location"
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(LOG_TAG, "onStartCommand")
-        someTask()
-        return super.onStartCommand(intent, flags, startId)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(LOG_TAG, "onDestroy")
-    }
-
-    override fun onBind(intent: Intent?): IBinder? {
-        Log.d(LOG_TAG, "onBind")
-        return null
-    }
-
-    fun someTask() {
+    private fun someTask() {
         Thread {
-            //for (i in 1..1000) {
             while (true){
-                //Log.d(LOG_TAG, "i = $i")
                 cloks = ArrayList()
-                initializeGeolocation()
                 try {
                     val appDB = openOrCreateDatabase("app.db", MODE_PRIVATE, null)
                     appDB.execSQL("CREATE TABLE IF NOT EXISTS clocks(id_clock INTEGER PRIMARY KEY AUTOINCREMENT, name_clock VARCHAR(200), descr_clock VARCHAR(400), latitude_clock REAL, longitude_clock REAL, radius_clock INT, is_active_clock BIT)")
@@ -64,28 +49,33 @@ class ServiceClock : Service() {
                             val longitude = myCursor.getDouble(4)
                             val radius = myCursor.getInt(5)
                             val is_active = myCursor.getInt(6) == 1
-                            cloks.add(Clock(id, name, descr, latitude, longitude, radius, is_active))
+                            cloks.add(AlarmClock(id, name, descr, latitude, longitude, radius, is_active))
                         }
                     myCursor?.close()
 
-
-                    Log.i("myLogs", "поиск...")
+                    var isAlarmClockActive = false
                     if (currentDeviceLocation != null) {
-                        Log.i("myLogs", "поиск")
                         for (clock in cloks) {
                             if(clock.isActive){
-                                Log.i("myLogs", "${clock.latitude} ${clock.longitude}")
-                                var f = (currentDeviceLocation!!.latitude - clock.latitude) * (currentDeviceLocation!!.latitude - clock.latitude) + (currentDeviceLocation!!.longitude - clock.longitude) * (currentDeviceLocation!!.longitude - clock.longitude)
-                                Log.i("myLogs", "${currentDeviceLocation!!.latitude} ${currentDeviceLocation!!.latitude} = $f")
-                                val result = (currentDeviceLocation!!.latitude - clock.latitude) * (currentDeviceLocation!!.latitude - clock.latitude) + (currentDeviceLocation!!.longitude - clock.longitude) * (currentDeviceLocation!!.longitude - clock.longitude) <= clock.radius * clock.radius
-                                Log.i("myLogs", result.toString())
-                                if ((currentDeviceLocation!!.latitude - clock.latitude) * (currentDeviceLocation!!.latitude - clock.latitude) + (currentDeviceLocation!!.longitude - clock.longitude) * (currentDeviceLocation!!.longitude - clock.longitude) <= clock.radius * clock.radius) {
-                                    showNotification()
+                                if (checkTheEntryLocation(currentDeviceLocation!!, clock)) {
+                                    showNotification(clock.id)
+                                    isAlarmClockActive = true
+                                }
+                            } else {
+                                if (!checkTheEntryLocation(currentDeviceLocation!!, clock)) {
+                                    showNotification(clock.id)
+                                    isAlarmClockActive = true
                                 }
                             }
                         }
                     }
-                    TimeUnit.SECONDS.sleep(10)
+
+                    if(!isAlarmClockActive){
+                        val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                        mNotificationManager.cancelAll()
+                    }
+
+                    TimeUnit.SECONDS.sleep(60)
                 } catch (e: InterruptedException) {
                     e.printStackTrace()
                 }
@@ -94,53 +84,86 @@ class ServiceClock : Service() {
         }.start()
     }
 
-    fun showNotification(){
-        val NOTIFICATION_ID = 234
-        val CHANNEL_ID = "alarm_clock_01"
-        val name: CharSequence = "alarm_clock"
-        val Description = "clock by location"
-        val notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+    private fun checkTheEntryLocation(d: Location, ac: AlarmClock): Boolean {
+        // (d.x - ac.x)^2 + (d.y - ac.y)^2 ?= R^2
+        if ((d.latitude-ac.latitude)*(d.latitude-ac.latitude)
+                +(d.longitude-ac.longitude)*(d.longitude-ac.longitude)
+                <= ac.radius * ac.radius)
+            return true
+        return false
+    }
+
+    private fun createChanelNotification(){
+        notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_HIGH
-            val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
-            mChannel.description = Description
+            val mChannel = NotificationChannel(CHANNEL_ID, NAME, importance)
+            mChannel.description = DESCRIPTION
             mChannel.enableLights(true)
             mChannel.lightColor = Color.RED
             mChannel.enableVibration(true)
             mChannel.vibrationPattern = longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400)
-            mChannel.setShowBadge(false)
-            notificationManager.createNotificationChannel(mChannel)
+            mChannel.setShowBadge(true)
+            notificationManager?.createNotificationChannel(mChannel)
         }
+    }
 
+    private fun showNotification(IdAlarmClock: Int){
         val alarmSound: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(ru.igrogood.clockbylocation.R.mipmap.ic_launcher)
-                .setContentTitle("Внимание")
-                .setContentText("Вы вошли в зону будильника")
-                .setSound(alarmSound)
-
-        val resultIntent = Intent(this, MainActivity::class.java)
+            .setDefaults(FLAG_INSISTENT)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(getString(R.string.warning))
+            .setContentText(getString(R.string.notification_when_the_alarm_is_activated))
+            .setSound(alarmSound)
+            .setUsesChronometer(true)
+            .setAutoCancel(false)
+            .setOngoing(true)
+            .setOnlyAlertOnce(false)
+        //val resultIntent = Intent(this, AppActivity::class.java)
+        val resultIntent = Intent(this, WakeUpCallActivity::class.java).putExtra(ID_ALARM_CLOCK, IdAlarmClock)
         val stackBuilder: TaskStackBuilder = TaskStackBuilder.create(this)
-        stackBuilder.addParentStack(MainActivity::class.java)
+        stackBuilder.addParentStack(AppActivity::class.java)
         stackBuilder.addNextIntent(resultIntent)
         val resultPendingIntent: PendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
-
         builder.setContentIntent(resultPendingIntent)
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+        val notification: Notification = builder.build()
+        notification.flags += FLAG_INSISTENT
+        notificationManager?.notify(NOTIFICATION_ID, builder.build())
     }
 
     private fun initializeGeolocation(){
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         val mLocationRequest = LocationRequest()
-        mLocationRequest.interval = 10000
+        mLocationRequest.interval = 60000 // ms
         mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         val mLocationCallback: LocationCallback
         mLocationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 currentDeviceLocation = locationResult.lastLocation
+                Log.i(LOG_TAG, currentDeviceLocation.toString())
             }
         }
         fusedLocationProviderClient!!
-                .requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.getMainLooper())
+            .requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.getMainLooper())
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        createChanelNotification()
+        initializeGeolocation()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        someTask()
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? {
+        return null
     }
 }
