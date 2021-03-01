@@ -14,15 +14,16 @@ import ru.igrogood.clockbylocation.AlarmClock
 import ru.igrogood.clockbylocation.ListClockAdapter
 import ru.igrogood.clockbylocation.R
 
+
 class AlarmListFragment : Fragment(), ListClockAdapter.INotesAdapterCallback {
     var cloks: ArrayList<AlarmClock> = ArrayList()
     var appDB: SQLiteDatabase? = null
     private var listClockAdapter: ListClockAdapter? = null
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_alarm_list, container, false)
     }
@@ -30,8 +31,13 @@ class AlarmListFragment : Fragment(), ListClockAdapter.INotesAdapterCallback {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         val lvMain: ListView = view?.findViewById(R.id.listClock) as ListView
-        appDB = requireContext().openOrCreateDatabase("app.db", AppCompatActivity.MODE_PRIVATE, null)
-        appDB?.execSQL("""
+        appDB = requireContext().openOrCreateDatabase(
+            "app.db",
+            AppCompatActivity.MODE_PRIVATE,
+            null
+        )
+        appDB?.execSQL(
+            """
             CREATE TABLE IF NOT EXISTS clocks(
                 id_clock INTEGER PRIMARY KEY AUTOINCREMENT,
                 name_clock VARCHAR(200),
@@ -40,7 +46,8 @@ class AlarmListFragment : Fragment(), ListClockAdapter.INotesAdapterCallback {
                 longitude_clock REAL,
                 radius_clock INT,
                 is_active_clock BIT)
-        """.trimIndent())
+        """.trimIndent()
+        )
         val myCursor: Cursor? = appDB?.rawQuery("SELECT * FROM clocks", null)
         if (myCursor != null)
             while (myCursor.moveToNext()) {

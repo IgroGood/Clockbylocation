@@ -21,4 +21,8 @@
     <string name="warning">Внимание</string>
     <string name="notification_when_the_alarm_is_activated">Вы вошли в зону будильника</string>
     <string name="off_btn">Выключить</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="show_settings_menu">Показать</string>
+    <string name="hide_settings_menu">Скрыть</string>
 </resources>

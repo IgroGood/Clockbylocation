@@ -55,12 +55,17 @@ class ServiceClock : Service() {
 
                     var isAlarmClockActive = false
                     if (currentDeviceLocation != null) {
-                        for (clock in cloks) {
+                        Log.i(LOG_TAG, "currentDeviceLocation: ${currentDeviceLocation!!.latitude}:${currentDeviceLocation!!.longitude}")
+                        for (clock in cloks){
                             if(clock.isActive){
-                                if (checkTheEntryLocation(currentDeviceLocation!!, clock)) {
+                                Log.i(LOG_TAG, "! ${clock.name}")
+                                Log.i(LOG_TAG, "alarmClock: ${clock.latitude}:${clock.longitude}, ${clock.radius}")
+                                if (checkTheEntryLocation(currentDeviceLocation!!, clock)){
+                                    Log.i(LOG_TAG, "true")
                                     showNotification(clock.id)
                                     isAlarmClockActive = true
-                                }
+                                } else
+                                    Log.i(LOG_TAG, "false")
                             }
                         }
                     }
@@ -80,10 +85,11 @@ class ServiceClock : Service() {
     }
 
     private fun checkTheEntryLocation(d: Location, ac: AlarmClock): Boolean {
-        // (d.x - ac.x)^2 + (d.y - ac.y)^2 ?= R^2
+        // (d.x - ac.x)^2 + (d.y - ac.y)^2 <= R^2
+        val radius: Double = ac.radius / 111111.0
         if ((d.latitude-ac.latitude)*(d.latitude-ac.latitude)
-                +(d.longitude-ac.longitude)*(d.longitude-ac.longitude)
-                <= ac.radius * ac.radius)
+            +(d.longitude-ac.longitude)*(d.longitude-ac.longitude)
+            <= radius * radius)
             return true
         return false
     }

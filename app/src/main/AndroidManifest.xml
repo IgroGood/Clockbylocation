@@ -36,6 +36,10 @@
         <service
             android:name=".ServiceClock"
             android:enabled="true" />
+
+        <meta-data
+            android:name="com.huawei.hms.client.channel.androidMarket"
+            android:value="false" />
     </application>
 
 </manifest>

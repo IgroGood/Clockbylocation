@@ -8,6 +8,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -23,6 +24,7 @@ import com.huawei.hms.maps.model.CameraPosition
 import com.huawei.hms.maps.model.Circle
 import com.huawei.hms.maps.model.CircleOptions
 import com.huawei.hms.maps.model.LatLng
+import kotlinx.android.synthetic.main.fragment_map.*
 import ru.igrogood.clockbylocation.InputFilterMinMax
 import ru.igrogood.clockbylocation.R
 
@@ -57,6 +59,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         radiusClock = getString(R.string.default_radius).toDouble()
         mMapView!!.onCreate(mapViewBundle)
         mMapView!!.getMapAsync(this)
+
         initializeGeolocation()
         val nameClockEdit = view.findViewById<EditText>(R.id.nameClockEdit)
         val descrClockEdit = view.findViewById<EditText>(R.id.descrClockEdit)
